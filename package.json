@@ -1,0 +1,51 @@
+{
+  "name": "packmeta",
+  "version": "0.1.0",
+  "description": "CLI tool to collect and concatenate project source files and their imports into summary files, optimized for sharing with large language models.",
+  "main": "dist/cli.js",
+  "bin": {
+    "packmeta": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/keithworrell/packmeta.git"
+  },
+  "keywords": [
+    "cli",
+    "ast",
+    "import",
+    "typescript",
+    "javascript",
+    "summary",
+    "llm",
+    "packmeta"
+  ],
+  "author": "Keith Worrell <keith.worrell@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/username/packmeta/issues"
+  },
+  "homepage": "https://github.com/username/packmeta#readme",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli.js",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.22.0",
+    "chalk": "^4.1.2",
+    "commander": "^11.0.0",
+    "cosmiconfig": "^8.0.0",
+    "fast-glob": "^3.3.3",
+    "ora": "^8.2.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.0"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  }
+}

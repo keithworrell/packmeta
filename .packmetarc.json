@@ -1,0 +1,14 @@
+{
+  "extensions": [
+    ".js",
+    ".ts",
+    ".tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build"
+  ],
+  "outDir": "Metadata",
+  "defaultDepth": 1
+}
