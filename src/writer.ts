@@ -1,45 +1,35 @@
 import fs from "fs/promises";
 import path from "path";
 
+/** Options for writeSummary */
+export interface WriteOptions {
+  json: boolean;
+  dryRun: boolean;
+  estimateTokens: boolean;
+  verbose: boolean;
+  quiet: boolean;
+}
+
 /**
- * Write summary files for each entry, concatenating the entry and its dependencies.
- *
- * @param entryFiles - array of entry file paths as supplied (relative or absolute)
- * @param files - sorted array of all file paths (relative to rootDir)
- * @param rootDir - absolute path of project root
- * @param outDir - output directory (relative to rootDir)
+ * Write a single summary file (or JSON manifest) for the given entries and files.
+ * If estimateTokens is set, logs an approximate token count based on output length.
  */
-export async function writeSummaries(
+export async function writeSummary(
   entryFiles: string[],
   files: string[],
   rootDir: string,
-  outDir: string
+  outFile: string,
+  options: WriteOptions
 ): Promise<void> {
-  const absOut = path.resolve(rootDir, outDir);
-  await fs.mkdir(absOut, { recursive: true });
-
-  // Helper: robust slugify using safe characters
-  const safeSlug = (p: string) =>
-    p
-      .split(path.sep)
-      .join("_")
-      .replace(/[^A-Za-z0-9_-]/g, "_");
-
-  // Normalize separators to forward slash for headers
-  const normalizePath = (p: string) => p.split(path.sep).join("/");
-
-  // Helper to emit code block with header
-  const emitCodeBlock = (lines: string[], relPath: string, content: string) => {
-    lines.push(`// ${normalizePath(relPath)}`);
-    const ext = path.extname(relPath).toLowerCase();
-    const lang = ext === ".ts" || ext === ".tsx" ? "ts" : "js";
-    lines.push("```" + lang);
-    lines.push(content);
-    lines.push("```");
-    lines.push("");
+  const { json, dryRun, estimateTokens, verbose, quiet } = options;
+  const log = (...msgs: any[]) => {
+    if (!quiet) console.log(...msgs);
+  };
+  const debug = (...msgs: any[]) => {
+    if (verbose && !quiet) console.log(...msgs);
   };
 
-  // Read all file contents in parallel
+  debug("Reading files for summary...");
   const contentMap: Map<string, string> = new Map();
   await Promise.all(
     files.map(async (relPath) => {
@@ -48,42 +38,48 @@ export async function writeSummaries(
         const content = await fs.readFile(absPath, "utf-8");
         contentMap.set(relPath, content);
       } catch (err: any) {
-        console.warn(`⚠️  Unable to read ${relPath}: ${err.message}`);
+        log(`⚠️  Unable to read ${relPath}: ${err.message}`);
       }
     })
   );
 
-  // Generate summary for each entry file
-  for (const entry of entryFiles) {
-    const entryRel = path.relative(rootDir, path.resolve(rootDir, entry));
-    const slug = safeSlug(entryRel);
-    const outFile = path.join(absOut, `summary-${slug}.txt`);
+  let outData: string;
 
+  if (json) {
+    const manifest = files.map((rel) => ({
+      path: rel,
+      content: contentMap.get(rel) || "",
+    }));
+    outData = JSON.stringify(manifest, null, 2);
+  } else {
     const lines: string[] = [];
-
-    // Include the entry file first if available
-    const entryContent = contentMap.get(entryRel);
-    if (entryContent) {
-      emitCodeBlock(lines, entryRel, entryContent);
-    } else {
-      console.warn(`⚠️  Entry file missing: ${entryRel}`);
-    }
-
-    // Include dependencies
+    lines.push(
+      `// Entries: ${entryFiles.map((e) => e.replace(/\\/g, "/")).join(", ")}`
+    );
+    lines.push("");
     for (const relPath of files) {
-      if (relPath === entryRel) continue;
-      const depContent = contentMap.get(relPath);
-      if (depContent) {
-        emitCodeBlock(lines, relPath, depContent);
-      }
+      const content = contentMap.get(relPath);
+      if (!content) continue;
+      lines.push(`// ${relPath.replace(/\\/g, "/")}`);
+      const ext = path.extname(relPath).toLowerCase();
+      const lang = ext === ".ts" || ext === ".tsx" ? "ts" : "js";
+      lines.push(`\`\`\`${lang}`);
+      lines.push(content);
+      lines.push("```");
+      lines.push("");
     }
+    outData = lines.join("\n");
+  }
 
-    // Write summary to disk
-    try {
-      await fs.writeFile(outFile, lines.join("\n"), "utf-8");
-      console.log(`✔️  Created ${path.relative(rootDir, outFile)}`);
-    } catch (err: any) {
-      console.warn(`❌ Failed to write ${outFile}: ${err.message}`);
-    }
+  if (estimateTokens) {
+    // Rough estimate: 4 chars per token
+    const charCount = outData.length;
+    const tokenEstimate = Math.ceil(charCount / 4);
+    log(`ℹ️  Estimated tokens: ${tokenEstimate}`);
+  }
+
+  debug("Generated output data length:", outData.length);
+  if (!dryRun) {
+    await fs.writeFile(outFile, outData, "utf-8");
   }
 }

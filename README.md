@@ -1,6 +1,6 @@
 # packmeta
 
-`packmeta` is a CLI tool designed to help developers working with large codebases and large language models (LLMs). It bundles a file and its local dependencies (up to a specified recursion depth) into a single summary file, making it easy to share relevant code snippets with an LLM or in documentation.
+`packmeta` is a CLI tool designed to help developers working with large codebases and large language models (LLMs). It bundles a file (or files) and their local dependencies (up to a specified recursion depth) into a single summary file, making it easy to share exactly the context needed. It can also output an ASCII project structure when run without arguments.
 
 ---
 
@@ -8,13 +8,13 @@
 
 ```bash
 # Clone and install locally
-git clone <repo-url> packmeta
+git clone https://github.com/keithworrell/packmeta.git
 cd packmeta
 npm install
 npm link
 ```
 
-_Alternatively_, install from npm (when published):
+_Alternatively_, install from npm (once published):
 
 ```bash
 npm install -g packmeta
@@ -25,55 +25,48 @@ npm install -g packmeta
 ## Quickstart
 
 ```bash
-# Generate a summary of index.ts and its direct imports:
+# Bundle a single file and its direct imports:
 packmeta src/index.ts --depth 1
 
-# Generate a deeper bundle (imports-of-imports):
+# Bundle deeper (imports-of-imports):
 packmeta src/index.ts --depth 2
+
+# Bundle multiple entry files into one summary:
+packmeta src/app.ts src/lib.ts --depth 2
+
+# Include only files matching patterns:
+packmeta src/ui/*.tsx --depth 1 --include-pattern "Modal.tsx" --exclude-pattern "Test.ts"
+
+# Estimate LLM tokens without writing files:
+packmeta src/index.ts --depth 2 --estimate-tokens --dry-run
+
+# Traverse entire project and output structure:
+packmeta
 ```
 
-By default, summaries are written to `Metadata/summary-<path-slug>.txt`.
+By default, outputs are written to `Metadata/`:
+
+- **Summaries**: `summary-<slug>.txt`
+- **Structure**: `project-structure.txt`
 
 ---
 
-## README for LLM Integration
+## ChatGPT Prompt Template
 
-When collaborating with an LLM (e.g., ChatGPT) to debug, refactor, or understand a portion of your project, use `packmeta` to extract the minimal set of files needed for context.
+```text
+# ChatGPT Prompt for packmeta Summary
+I have extracted relevant code snippets using packmeta. The summary file includes the entry files and their dependencies:
 
-1. **Identify the entry file** you want the LLM to focus on (e.g. `src/api/user.ts`).
-2. **Run `packmeta`** with an appropriate depth. For example:
+<PASTE CONTENTS OF summary-*.txt HERE>
 
-   ```bash
-   packmeta src/api/user.ts --depth 2
-   ```
-
-3. **Copy the contents** of the generated summary (e.g. `Metadata/summary-src_api_user_ts.txt`).
-4. **Paste** that entire block into your LLM prompt. For example:
-
-   > **User**: _Here's my server handler and its imports:_
-   >
-   > ````js
-   > // src/api/user.ts
-   >
-   > ```js
-   > // ... file contents ...
-   > ````
-   >
-   > // src/utils/db.ts
-   >
-   > ```js
-   > // ... file contents ...
-   > ```
-   >
-   > Can you help me understand why the user lookup is failing?
-
-The LLM now has exactly the code it needs—no more, no less—to provide targeted assistance without exceeding context limits.
+Please review this code and help me [debug, refactor, or explain] this functionality.
+```
 
 ---
 
 ## Configuration
 
-You can customize defaults by creating a `.packmetarc.json` in your project root:
+Create a `.packmetarc.json` in your project root to override defaults:
 
 ```json
 {
@@ -84,15 +77,61 @@ You can customize defaults by creating a `.packmetarc.json` in your project root
 }
 ```
 
-Use `-c <path>` to point to a custom config.
+Use `-c <path>` to specify a custom config file.
 
 ---
 
 ## Options
 
-- `-d, --depth <number>`: recursive import depth (overrides `defaultDepth`).
-- `-o, --out-dir <dir>`: output directory.
-- `-c, --config <path>`: path to a custom config file.
+| Flag                          | Description                                                                   |
+| ----------------------------- | ----------------------------------------------------------------------------- |
+| `-d, --depth <n>`             | Recursive import depth (overrides `defaultDepth`)                             |
+| `-o, --out-dir <dir>`         | Output directory (default `Metadata`)                                         |
+| `-c, --config <path>`         | Path to config file (default `.packmetarc.json`)                              |
+| `--include-pattern <pattern>` | Include only files whose relative paths match this substring; may be repeated |
+| `--exclude-pattern <pattern>` | Exclude files whose relative paths match this substring; may be repeated      |
+| `--extensions <list>`         | Comma-separated list of extensions to include (e.g. `.js,.ts,.tsx`)           |
+| `-f, --output-file <file>`    | Write output to this specific file instead of default naming                  |
+| `--json`                      | Emit a JSON manifest of `{ path, content }[]` rather than fenced text         |
+| `-e, --estimate-tokens`       | Estimate LLM token count of output (approx. 4 chars/token)                    |
+| `--dry-run`                   | Simulate actions without writing files                                        |
+| `-v, --verbose`               | Enable verbose logging                                                        |
+| `-q, --quiet`                 | Suppress non-error output                                                     |
+
+---
+
+## Common Commands
+
+```bash
+# Bundle and name output explicitly:
+packmeta entry.ts --depth 2 -f Metadata/my-summary.txt
+
+# Generate structure and summary in one go:
+packmeta          # → Metadata/project-structure.txt
+packmeta a.ts b.ts # → Metadata/summary-a_ts+b_ts.txt
+
+# JSON manifest:
+packmeta index.ts --json
+```
+
+---
+
+## Git & npm Release Workflow
+
+1. **Update version** (patch/minor/major):
+   ```bash
+   npm version patch    # updates package.json & creates Git tag vX.Y.Z
+   ```
+2. **Push commits & tags**:
+   ```bash
+   git push origin main --tags
+   ```
+3. **Publish to npm**:
+   ```bash
+   npm publish --access public
+   ```
+
+_Optional_: run tests or CI steps before publishing.
 
 ---
 
@@ -104,4 +143,4 @@ Use `-c <path>` to point to a custom config.
 
 ---
 
-Happy coding with your LLMs! For questions or feedback, open an issue or reach out on our chat channel.
+Happy coding with your LLMs!
