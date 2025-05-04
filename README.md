@@ -14,7 +14,7 @@ npm install
 npm link
 ```
 
-_Alternatively_, install from npm (once published):
+_Alternatively_, install from npm:
 
 ```bash
 npm install -g packmeta
@@ -113,25 +113,6 @@ packmeta a.ts b.ts # → Metadata/summary-a_ts+b_ts.txt
 # JSON manifest:
 packmeta index.ts --json
 ```
-
----
-
-## Git & npm Release Workflow
-
-1. **Update version** (patch/minor/major):
-   ```bash
-   npm version patch    # updates package.json & creates Git tag vX.Y.Z
-   ```
-2. **Push commits & tags**:
-   ```bash
-   git push origin main --tags
-   ```
-3. **Publish to npm**:
-   ```bash
-   npm publish --access public
-   ```
-
-_Optional_: run tests or CI steps before publishing.
 
 ---
 
