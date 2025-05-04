@@ -1,6 +1,6 @@
 {
   "name": "packmeta",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "CLI tool to collect and concatenate project source files and their imports into summary files, optimized for sharing with large language models.",
   "main": "dist/cli.js",
   "bin": {
