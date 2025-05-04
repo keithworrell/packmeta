@@ -26,9 +26,9 @@
   "author": "Keith Worrell <keith.worrell@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/username/packmeta/issues"
+    "url": "https://github.com/keithworrell/packmeta/issues"
   },
-  "homepage": "https://github.com/username/packmeta#readme",
+  "homepage": "https://github.com/keithworrell/packmeta#readme",
   "scripts": {
     "build": "tsc",
     "start": "node dist/cli.js",
