@@ -11,7 +11,7 @@ export interface PackMetaConfig {
 
 const DEFAULT_CONFIG: PackMetaConfig = {
   extensions: [".js", ".ts", ".tsx"],
-  exclude: ["node_modules", "dist", "build"],
+  exclude: ["node_modules", "dist", "build", ".git"],
   outDir: "Metadata",
   defaultDepth: 1,
 };
